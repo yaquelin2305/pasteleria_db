@@ -17,5 +17,5 @@ public class ItemCarritoService {
 
     public List<ItemCarro> listar() { return itemRepo.findAll(); }
 
-    public Optional<ItemCarro> obtenerPorId(Integer id) { return itemRepo.findById(id); }
+    public Optional<ItemCarro> obtenerPorId(Long id) { return itemRepo.findById(id); }
 }

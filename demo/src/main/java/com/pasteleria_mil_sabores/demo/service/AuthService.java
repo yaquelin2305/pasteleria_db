@@ -3,8 +3,10 @@ package com.pasteleria_mil_sabores.demo.service;
 import com.pasteleria_mil_sabores.demo.dto.*;
 import com.pasteleria_mil_sabores.demo.model.*;
 import com.pasteleria_mil_sabores.demo.repository.*;
-import com.pasteleria_mil_sabores.demo.util.JwtUtil; // ✅ import corregido
-import org.springframework.security.authentication.*;
+import com.pasteleria_mil_sabores.demo.util.JwtUtil;
+
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -44,15 +46,21 @@ public class AuthService {
 
     // 🧾 REGISTRO: crea usuario y devuelve token JWT
     public AuthResponse register(RegisterRequest request) {
+        // Evitar duplicados
         if (usuarioRepo.findByCorreo(request.getCorreo()).isPresent()) {
             throw new RuntimeException("El correo ya está registrado");
         }
 
+        // Crear nuevo usuario con todos los campos
         Usuario nuevo = new Usuario();
         nuevo.setNombre(request.getNombre());
         nuevo.setApellido(request.getApellido());
         nuevo.setCorreo(request.getCorreo());
         nuevo.setContrasena(passwordEncoder.encode(request.getContrasena()));
+        nuevo.setTelefono(request.getTelefono());
+        nuevo.setDireccion(request.getDireccion());
+        nuevo.setRegion(request.getRegion());
+        nuevo.setComuna(request.getComuna());
 
         // Asignar rol CLIENTE por defecto
         Rol rolCliente = rolRepo.findByNombre("CLIENTE");
@@ -63,7 +71,9 @@ public class AuthService {
 
         usuarioRepo.save(nuevo);
 
+        // Generar token JWT basado en el correo
         String token = jwtUtil.generateToken(nuevo.getCorreo());
+
         return new AuthResponse(token);
     }
 }

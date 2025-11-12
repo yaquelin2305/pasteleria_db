@@ -2,40 +2,77 @@ package com.pasteleria_mil_sabores.demo.model;
 
 import jakarta.persistence.*;
 import lombok.*;
-
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.userdetails.UserDetails;
+import java.util.Collection;
+import java.util.List;
 
 @Entity
 @Table(name = "usuario")
-
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class Usuario {
+public class Usuario implements UserDetails {
 
-    // Clave primaria de la tabla (auto incremental)
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Integer id;
+    private long id;
 
-    // Nombre del usuario (campo obligatorio)
     @Column(nullable = false, length = 100)
     private String nombre;
 
-    // Apellido del usuario (opcional)
     @Column(length = 100)
     private String apellido;
 
-    // Correo electrónico único (se usa también para login)
     @Column(nullable = false, unique = true, length = 100)
     private String correo;
 
-    // Contraseña encriptada o sin encriptar (campo obligatorio)
     @Column(nullable = false, length = 255)
     private String contrasena;
 
-    // Relación con la tabla "roles"
-    // Muchos usuarios pueden tener un mismo rol (por ejemplo, ADMIN o CLIENTE)
+    // 🔹 Campos nuevos (para registro completo del cliente)
+    @Column(length = 15)
+    private String telefono;
+
+    @Column(length = 255)
+    private String direccion;
+
+    @Column(length = 100)
+    private String region;
+
+    @Column(length = 100)
+    private String comuna;
+
     @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "id_rol") // Este campo se conecta con la clave foránea en la tabla usuarios
+    @JoinColumn(name = "id_rol")
     private Rol rol;
+
+    // 🔹 Métodos obligatorios de UserDetails
+    @Override
+    public Collection<? extends GrantedAuthority> getAuthorities() {
+        return List.of(new SimpleGrantedAuthority(rol.getNombre()));
+    }
+
+    @Override
+    public String getPassword() {
+        return contrasena;
+    }
+
+    @Override
+    public String getUsername() {
+        return correo;
+    }
+
+    @Override
+    public boolean isAccountNonExpired() { return true; }
+
+    @Override
+    public boolean isAccountNonLocked() { return true; }
+
+    @Override
+    public boolean isCredentialsNonExpired() { return true; }
+
+    @Override
+    public boolean isEnabled() { return true; }
 }

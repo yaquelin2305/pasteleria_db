@@ -18,15 +18,15 @@ public class ItemCarritoController {
 
     @PostMapping
     public ResponseEntity<ItemCarro> agregar(
-            @RequestParam Integer idCarrito,
-            @RequestParam Integer idProducto,
-            @RequestParam(defaultValue = "1") Integer cantidad) {
+            @RequestParam Long idCarrito,
+            @RequestParam Long idProducto,
+            @RequestParam(defaultValue = "1") int cantidad) {
         ItemCarro item = carritoService.agregarItem(idCarrito, idProducto, cantidad);
         return ResponseEntity.ok(item);
     }
 
     @DeleteMapping("/{idItem}")
-    public ResponseEntity<?> eliminar(@PathVariable Integer idItem) {
+    public ResponseEntity<?> eliminar(@PathVariable Long idItem) {
         carritoService.eliminarItem(idItem);
         return ResponseEntity.noContent().build();
     }

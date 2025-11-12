@@ -19,7 +19,7 @@ public class ProductoService {
         return productoRepo.findAll();
     }
 
-    public Optional<Producto> obtenerPorId(Integer id) {
+    public Optional<Producto> obtenerPorId(Long id) {
         return productoRepo.findById(id);
     }
 
@@ -27,7 +27,7 @@ public class ProductoService {
         return productoRepo.save(producto);
     }
 
-    public void eliminar(Integer id) {
+    public void eliminar(Long id) {
         productoRepo.deleteById(id);
     }
 }

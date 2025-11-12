@@ -14,7 +14,7 @@ public class Producto {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Integer id;
+    private Long id;
 
     @Column(nullable = false, length = 100)
     private String nombre;
@@ -28,5 +28,5 @@ public class Producto {
     @Column(length = 255)
     private String imagen_url;
 
-    private Integer stock = 0;
+    private int stock = 0;
 }
