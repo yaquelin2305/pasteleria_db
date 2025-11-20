@@ -1,8 +1,12 @@
 package com.pasteleria_mil_sabores.demo.service;
 
-import com.pasteleria_mil_sabores.demo.dto.*;
-import com.pasteleria_mil_sabores.demo.model.*;
-import com.pasteleria_mil_sabores.demo.repository.*;
+import com.pasteleria_mil_sabores.demo.dto.AuthRequest;
+import com.pasteleria_mil_sabores.demo.dto.AuthResponse;
+import com.pasteleria_mil_sabores.demo.dto.RegisterRequest;
+import com.pasteleria_mil_sabores.demo.model.Usuario;
+import com.pasteleria_mil_sabores.demo.model.Rol;
+import com.pasteleria_mil_sabores.demo.repository.UsuarioRepository;
+import com.pasteleria_mil_sabores.demo.repository.RolRepository;
 import com.pasteleria_mil_sabores.demo.util.JwtUtil;
 
 import org.springframework.security.authentication.AuthenticationManager;
@@ -24,6 +28,7 @@ public class AuthService {
                        RolRepository rolRepo,
                        PasswordEncoder passwordEncoder,
                        JwtUtil jwtUtil) {
+
         this.authManager = authManager;
         this.usuarioRepo = usuarioRepo;
         this.rolRepo = rolRepo;
@@ -31,8 +36,11 @@ public class AuthService {
         this.jwtUtil = jwtUtil;
     }
 
-    // 🔐 LOGIN: valida usuario y genera token JWT
+
+    // LOGIN
+
     public AuthResponse login(AuthRequest request) {
+
         authManager.authenticate(
                 new UsernamePasswordAuthenticationToken(
                         request.getCorreo(),
@@ -40,18 +48,32 @@ public class AuthService {
                 )
         );
 
-        String token = jwtUtil.generateToken(request.getCorreo());
-        return new AuthResponse(token);
+        Usuario usuario = usuarioRepo.findByCorreo(request.getCorreo())
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+
+        //  GENERAR TOKEN con (correo, rol, id)
+        String token = jwtUtil.generateToken(
+                usuario.getCorreo(),
+                usuario.getRol().getNombre(),
+                usuario.getId()
+        );
+
+        return new AuthResponse(
+                token,
+                usuario.getRol().getNombre(),
+                usuario.getId()
+        );
     }
 
-    // 🧾 REGISTRO: crea usuario y devuelve token JWT
+
+
+
     public AuthResponse register(RegisterRequest request) {
-        // Evitar duplicados
+
         if (usuarioRepo.findByCorreo(request.getCorreo()).isPresent()) {
             throw new RuntimeException("El correo ya está registrado");
         }
 
-        // Crear nuevo usuario con todos los campos
         Usuario nuevo = new Usuario();
         nuevo.setNombre(request.getNombre());
         nuevo.setApellido(request.getApellido());
@@ -62,18 +84,26 @@ public class AuthService {
         nuevo.setRegion(request.getRegion());
         nuevo.setComuna(request.getComuna());
 
-        // Asignar rol CLIENTE por defecto
-        Rol rolCliente = rolRepo.findByNombre("CLIENTE");
+        Rol rolCliente = rolRepo.findByNombre("ROL_CLIENTE");
         if (rolCliente == null) {
-            throw new RuntimeException("Rol CLIENTE no existe. Debes crearlo en la base de datos.");
+            throw new RuntimeException("Rol ROLE_CLIENTE no existe en la base de datos.");
         }
+
         nuevo.setRol(rolCliente);
 
         usuarioRepo.save(nuevo);
 
-        // Generar token JWT basado en el correo
-        String token = jwtUtil.generateToken(nuevo.getCorreo());
 
-        return new AuthResponse(token);
+        String token = jwtUtil.generateToken(
+                nuevo.getCorreo(),
+                nuevo.getRol().getNombre(),
+                nuevo.getId()
+        );
+
+        return new AuthResponse(
+                token,
+                nuevo.getRol().getNombre(),
+                nuevo.getId()
+        );
     }
 }

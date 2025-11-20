@@ -1,5 +1,6 @@
 package com.pasteleria_mil_sabores.demo.config;
 
+
 import com.pasteleria_mil_sabores.demo.repository.UsuarioRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;

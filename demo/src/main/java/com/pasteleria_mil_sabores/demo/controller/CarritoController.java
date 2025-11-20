@@ -1,62 +1,46 @@
 package com.pasteleria_mil_sabores.demo.controller;
 
-import com.pasteleria_mil_sabores.demo.model.Carrito;
 import com.pasteleria_mil_sabores.demo.model.ItemCarro;
 import com.pasteleria_mil_sabores.demo.service.CarritoService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
-@RequestMapping("/api/carrito")
-@CrossOrigin(origins = "http://localhost:5173")
+@RequestMapping("/carrito")
+@RequiredArgsConstructor
+@Tag(name = "Carrito", description = "Operaciones públicas del carrito de compras")
+@CrossOrigin("*")
 public class CarritoController {
 
     private final CarritoService carritoService;
 
-    public CarritoController(CarritoService carritoService) {
-        this.carritoService = carritoService;
+
+    @PostMapping("/agregar/{productoId}")
+    @Operation(summary = "Agregar un producto al carrito (PÚBLICO)")
+    public ResponseEntity<ItemCarro> agregarProducto(
+            @PathVariable Long productoId) {
+
+        ItemCarro item = carritoService.agregarProducto(productoId);
+        return ResponseEntity.ok(item);
     }
 
-    // ✅ Obtener o crear carrito según usuario
-    @GetMapping("/usuario/{idUsuario}")
-    public ResponseEntity<Carrito> obtenerOCrearCarrito(@PathVariable Long idUsuario) {
-        Carrito carrito = carritoService.obtenerOCrearCarrito(idUsuario);
-        return ResponseEntity.ok(carrito);
+
+    @GetMapping
+    @Operation(summary = "Obtener el carrito completo (PÚBLICO)")
+    public ResponseEntity<List<ItemCarro>> obtenerCarrito() {
+        return ResponseEntity.ok(carritoService.obtenerCarrito());
     }
 
-    // ✅ Obtener carrito por ID
-    @GetMapping("/{idCarrito}")
-    public ResponseEntity<?> obtenerCarritoPorId(@PathVariable Long idCarrito) {
-        try {
-            Carrito carrito = carritoService.obtenerPorId(idCarrito);
-            return ResponseEntity.ok(carrito);
-        } catch (RuntimeException e) {
-            return ResponseEntity.status(404).body(e.getMessage());
-        }
-    }
 
-    // ✅ Agregar producto al carrito
-    @PostMapping("/{idCarrito}/agregar")
-    public ResponseEntity<?> agregarItem(
-            @PathVariable Long idCarrito,
-            @RequestParam Long idProducto,
-            @RequestParam Integer cantidad) {
-        try {
-            ItemCarro item = carritoService.agregarItem(idCarrito, idProducto, cantidad);
-            return ResponseEntity.ok(item);
-        } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
-        }
-    }
-
-    // ✅ Eliminar producto del carrito
-    @DeleteMapping("/item/{idItem}")
-    public ResponseEntity<?> eliminarItem(@PathVariable Long idItem) {
-        try {
-            carritoService.eliminarItem(idItem);
-            return ResponseEntity.ok("Item eliminado correctamente");
-        } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
-        }
+    @DeleteMapping("/eliminar/{itemId}")
+    @Operation(summary = "Eliminar un item del carrito (PÚBLICO)")
+    public ResponseEntity<String> eliminarItem(@PathVariable Long itemId) {
+        carritoService.eliminarItem(itemId);
+        return ResponseEntity.ok("Ítem eliminado del carrito");
     }
 }

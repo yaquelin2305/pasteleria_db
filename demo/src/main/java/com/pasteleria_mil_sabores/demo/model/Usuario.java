@@ -31,7 +31,7 @@ public class Usuario implements UserDetails {
     @Column(nullable = false, length = 255)
     private String contrasena;
 
-    // 🔹 Campos nuevos (para registro completo del cliente)
+
     @Column(length = 15)
     private String telefono;
 
@@ -48,7 +48,6 @@ public class Usuario implements UserDetails {
     @JoinColumn(name = "id_rol")
     private Rol rol;
 
-    // 🔹 Métodos obligatorios de UserDetails
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
         return List.of(new SimpleGrantedAuthority(rol.getNombre()));

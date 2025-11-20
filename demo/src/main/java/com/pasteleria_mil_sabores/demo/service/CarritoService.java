@@ -1,100 +1,73 @@
 package com.pasteleria_mil_sabores.demo.service;
 
-import com.pasteleria_mil_sabores.demo.model.*;
-import com.pasteleria_mil_sabores.demo.repository.*;
+import com.pasteleria_mil_sabores.demo.model.Carrito;
+import com.pasteleria_mil_sabores.demo.model.ItemCarro;
+import com.pasteleria_mil_sabores.demo.model.Producto;
+import com.pasteleria_mil_sabores.demo.repository.CarritoRepository;
+import com.pasteleria_mil_sabores.demo.repository.ItemCarritoRepository;
+import com.pasteleria_mil_sabores.demo.repository.ProductoRepository;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-import java.math.BigDecimal;
-import java.time.LocalDateTime;
-import java.util.ArrayList;
+
+import java.util.List;
 
 @Service
+@RequiredArgsConstructor
 public class CarritoService {
 
     private final CarritoRepository carritoRepo;
     private final ItemCarritoRepository itemRepo;
     private final ProductoRepository productoRepo;
-    private final UsuarioRepository usuarioRepo;
 
-    public CarritoService(CarritoRepository carritoRepo,
-                          ItemCarritoRepository itemRepo,
-                          ProductoRepository productoRepo,
-                          UsuarioRepository usuarioRepo) {
-        this.carritoRepo = carritoRepo;
-        this.itemRepo = itemRepo;
-        this.productoRepo = productoRepo;
-        this.usuarioRepo = usuarioRepo;
-    }
 
-    //  Obtener o crear carrito por usuario
-    @Transactional
-    public Carrito obtenerOCrearCarrito(Long idUsuario) {
-        Usuario usuario = usuarioRepo.findById(idUsuario)
-                .orElseThrow(() -> new RuntimeException("Usuario no encontrado con ID: " + idUsuario));
+    private Carrito obtenerCarritoUnico() {
 
-        return carritoRepo.findByUsuario(usuario).orElseGet(() -> {
-            Carrito nuevo = new Carrito();
-            nuevo.setUsuario(usuario);
-            nuevo.setFecha(LocalDateTime.now());
-            nuevo.setTotal(BigDecimal.ZERO);
-            nuevo.setItems(new ArrayList<>());
-            return carritoRepo.save(nuevo);
-        });
-    }
 
-    //  Obtener carrito por su ID
-    @Transactional(readOnly = true)
-    public Carrito obtenerPorId(Long idCarrito) {
-        return carritoRepo.findById(idCarrito)
-                .orElseThrow(() -> new RuntimeException("Carrito no encontrado con ID: " + idCarrito));
-    }
+        List<Carrito> carritos = carritoRepo.findAll();
 
-    //  Agregar producto al carrito
-    @Transactional
-    public ItemCarro agregarItem(Long idCarrito, Long idProducto, Integer cantidad) {
-        Carrito carrito = carritoRepo.findById(idCarrito)
-                .orElseThrow(() -> new RuntimeException("Carrito no encontrado"));
-        Producto producto = productoRepo.findById(idProducto)
-                .orElseThrow(() -> new RuntimeException("Producto no encontrado"));
-
-        BigDecimal precio = producto.getPrecio() != null ? producto.getPrecio() : BigDecimal.ZERO;
-        BigDecimal subtotal = precio.multiply(BigDecimal.valueOf(cantidad));
-
-        ItemCarro item = new ItemCarro();
-        item.setCarrito(carrito);
-        item.setProducto(producto);
-        item.setCantidad(cantidad);
-        item.setSubtotal(subtotal);
-
-        // Si el carrito no tiene lista de items, inicialízala
-        if (carrito.getItems() == null) {
-            carrito.setItems(new ArrayList<>());
+        if (!carritos.isEmpty()) {
+            return carritos.get(0); // usar el primero
         }
 
-        carrito.getItems().add(item);
 
-        BigDecimal totalActual = carrito.getTotal() != null ? carrito.getTotal() : BigDecimal.ZERO;
-        BigDecimal nuevoTotal = totalActual.add(subtotal);
-        carrito.setTotal(nuevoTotal);
-
-        carritoRepo.save(carrito);
-        return itemRepo.save(item);
+        Carrito nuevo = new Carrito();
+        return carritoRepo.save(nuevo);  // ID se genera solo
     }
 
-    // Eliminar item del carrito
-    @Transactional
-    public void eliminarItem(Long idItem) {
-        ItemCarro item = itemRepo.findById(idItem)
-                .orElseThrow(() -> new RuntimeException("Item no encontrado"));
-        Carrito carrito = item.getCarrito();
 
-        BigDecimal subtotal = item.getSubtotal() != null ? item.getSubtotal() : BigDecimal.ZERO;
-        BigDecimal totalActual = carrito.getTotal() != null ? carrito.getTotal() : BigDecimal.ZERO;
-        BigDecimal nuevoTotal = totalActual.subtract(subtotal);
+    public ItemCarro agregarProducto(Long productoId) {
 
-        carrito.setTotal(nuevoTotal);
-        carrito.getItems().remove(item);
-        itemRepo.delete(item);
-        carritoRepo.save(carrito);
+        Carrito carrito = obtenerCarritoUnico();
+        Producto producto = productoRepo.findById(productoId)
+                .orElseThrow(() -> new RuntimeException("Producto no encontrado"));
+
+        // Ver si el producto ya está en el carrito
+        return itemRepo.findFirstByCarritoAndProducto(carrito, producto)
+
+                .map(itemExistente -> {
+                    itemExistente.setCantidad(itemExistente.getCantidad() + 1);
+                    return itemRepo.save(itemExistente);
+                })
+                .orElseGet(() -> {
+                    ItemCarro nuevo = new ItemCarro();
+                    nuevo.setCarrito(carrito);
+                    nuevo.setProducto(producto);
+                    nuevo.setCantidad(1);
+                    return itemRepo.save(nuevo);
+                });
+    }
+
+
+    public List<ItemCarro> obtenerCarrito() {
+        Carrito carrito = obtenerCarritoUnico();
+        return itemRepo.findByCarrito(carrito);
+    }
+
+
+    public void eliminarItem(Long itemId) {
+        if (!itemRepo.existsById(itemId)) {
+            throw new RuntimeException("Ítem no encontrado");
+        }
+        itemRepo.deleteById(itemId);
     }
 }

@@ -1,5 +1,6 @@
 package com.pasteleria_mil_sabores.demo.model;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
 import lombok.*;
 import java.math.BigDecimal;
@@ -15,10 +16,11 @@ public class ItemCarro {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
-    // Relación con Carrito (Many ItemCarro a One Carrito)
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "id_carrito", nullable = false)
+    @JsonBackReference
     private Carrito carrito;
+
 
     // Relación con Producto (Many ItemCarro a One Producto)
     @ManyToOne(fetch = FetchType.EAGER)
@@ -31,5 +33,6 @@ public class ItemCarro {
     // Usar BigDecimal para manejar dinero con precisión
     @Column(name = "subtotal", nullable = false, precision = 10, scale = 2)
     private BigDecimal subtotal = BigDecimal.ZERO;
+
 
 }
