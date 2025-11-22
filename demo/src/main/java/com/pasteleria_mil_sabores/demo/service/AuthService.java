@@ -8,7 +8,6 @@ import com.pasteleria_mil_sabores.demo.model.Rol;
 import com.pasteleria_mil_sabores.demo.repository.UsuarioRepository;
 import com.pasteleria_mil_sabores.demo.repository.RolRepository;
 import com.pasteleria_mil_sabores.demo.util.JwtUtil;
-
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -18,27 +17,25 @@ import org.springframework.stereotype.Service;
 public class AuthService {
 
     private final AuthenticationManager authManager;
-    private final UsuarioRepository usuarioRepo;
-    private final RolRepository rolRepo;
+    private final UsuarioRepository usuarioRepository;
+    private final RolRepository rolRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtUtil jwtUtil;
 
     public AuthService(AuthenticationManager authManager,
-                       UsuarioRepository usuarioRepo,
-                       RolRepository rolRepo,
+                       UsuarioRepository usuarioRepository,
+                       RolRepository rolRepository,
                        PasswordEncoder passwordEncoder,
                        JwtUtil jwtUtil) {
 
         this.authManager = authManager;
-        this.usuarioRepo = usuarioRepo;
-        this.rolRepo = rolRepo;
+        this.usuarioRepository = usuarioRepository;
+        this.rolRepository = rolRepository;
         this.passwordEncoder = passwordEncoder;
         this.jwtUtil = jwtUtil;
     }
 
-
-    // LOGIN
-
+    // LOGIN (NO MODIFICADO)
     public AuthResponse login(AuthRequest request) {
 
         authManager.authenticate(
@@ -48,10 +45,9 @@ public class AuthService {
                 )
         );
 
-        Usuario usuario = usuarioRepo.findByCorreo(request.getCorreo())
+        Usuario usuario = usuarioRepository.findByCorreo(request.getCorreo())
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
 
-        //  GENERAR TOKEN con (correo, rol, id)
         String token = jwtUtil.generateToken(
                 usuario.getCorreo(),
                 usuario.getRol().getNombre(),
@@ -65,12 +61,11 @@ public class AuthService {
         );
     }
 
-
-
-
+    // REGISTRO CORREGIDO
     public AuthResponse register(RegisterRequest request) {
 
-        if (usuarioRepo.findByCorreo(request.getCorreo()).isPresent()) {
+        // Validar existencia del correo
+        if (usuarioRepository.findByCorreo(request.getCorreo()).isPresent()) {
             throw new RuntimeException("El correo ya está registrado");
         }
 
@@ -84,16 +79,17 @@ public class AuthService {
         nuevo.setRegion(request.getRegion());
         nuevo.setComuna(request.getComuna());
 
-        Rol rolCliente = rolRepo.findByNombre("ROL_CLIENTE");
+        // Buscar rol CLIENTE
+        Rol rolCliente = rolRepository.findByNombre("ROL_CLIENTE");
         if (rolCliente == null) {
-            throw new RuntimeException("Rol ROLE_CLIENTE no existe en la base de datos.");
+            throw new RuntimeException("El rol ROL_CLIENTE no existe en la base de datos");
         }
 
         nuevo.setRol(rolCliente);
 
-        usuarioRepo.save(nuevo);
+        usuarioRepository.save(nuevo);
 
-
+        // Generar token del recién registrado
         String token = jwtUtil.generateToken(
                 nuevo.getCorreo(),
                 nuevo.getRol().getNombre(),

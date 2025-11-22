@@ -45,7 +45,7 @@ public class SecurityConfig {
 
 
                         .requestMatchers("/api/v1/**").authenticated()
-                        .requestMatchers("/api/privado/**").authenticated()
+
 
                         .anyRequest().permitAll()
                 )
